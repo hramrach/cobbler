@@ -480,7 +480,7 @@ class BuildIso:
 
     def generate_standalone_iso(self, imagesdir, isolinuxdir, distname, filesource, airgapped: bool, profiles):
         """
-        Create bootable CD image to be used for handsoff CD installtions
+        Create bootable CD image to be used for handsoff CD installations
 
         :param imagesdir: Unused Parameter.
         :param isolinuxdir: The parent directory where the file isolinux.cfg is located at.
@@ -643,7 +643,8 @@ class BuildIso:
             standalone: Optional[bool] = None, airgapped: Optional[bool] = None, source=None,
             exclude_dns: Optional[bool] = None, xorrisofs_opts: Optional[str] = None):
         """
-        A
+        Run the whole iso generation from bottom to top. This is the only method which should be called from non-class
+        members.
 
         :param iso: The name of the iso. Defaults to "autoinst.iso".
         :param buildisodir: This overwrites the directory from the settings in which the iso is built in.
