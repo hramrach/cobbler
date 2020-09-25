@@ -27,7 +27,8 @@ import tempfile
 import threading
 from typing import Optional, List, Union
 
-from cobbler.actions import status, hardlink, sync, buildiso, replicate, report, log, acl, check, reposync
+from cobbler.actions import status, hardlink, sync, replicate, report, log, acl, check, reposync
+from cobbler.actions.buildiso import BuildIso
 from cobbler import autoinstall_manager
 from cobbler.cobbler_collections import manager
 from cobbler.items import package, system, image, profile, repo, mgmtclass, distro, file, menu
@@ -1701,7 +1702,7 @@ class CobblerAPI:
         :param exclude_dns:
         :param xorrisofs_opts:
         """
-        builder = buildiso.BuildIso(self._collection_mgr)
+        builder = BuildIso(self._collection_mgr)
         builder.run(
             iso=iso, profiles=profiles, systems=systems, buildisodir=buildisodir, distro=distro, standalone=standalone,
             airgapped=airgapped, source=source, exclude_dns=exclude_dns, xorrisofs_opts=xorrisofs_opts
