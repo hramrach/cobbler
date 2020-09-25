@@ -1,6 +1,6 @@
 """
-Builds bootable CD images that have PXE-equivalent behavior
-for all Cobbler distros/profiles/systems currently in memory.
+Builds bootable CD images that have PXE-equivalent behavior for all Cobbler distros/profiles/systems currently in
+memory.
 
 Copyright 2006-2009, Red Hat, Inc and Others
 Michael DeHaan <michael.dehaan AT gmail>
@@ -61,7 +61,7 @@ class BuildIso:
         Add remaining kernel_options to append_line
 
         :param koptdict: The kernel options which are not present in append_line.
-        :return: A single line with all kernel options
+        :return: A single line with all kernel options from the dictionary in the string. Starts with a space.
         """
         append_line = ""
         for (k, v) in list(koptdict.items()):
@@ -81,7 +81,6 @@ class BuildIso:
                         append_line += " %s='%s'" % (k, _v)
                     else:
                         append_line += " %s=%s" % (k, _v)
-        append_line += "\n"
         return append_line
 
     def make_shorter(self, distname: str) -> str:
@@ -126,7 +125,7 @@ class BuildIso:
 
         :param selected_items: The filter to match certain objects with. The filter will be applied to the object name.
         :param list_type: Must be "profile" or "system".
-        :return: A list of valid profiles OR systems.
+        :return: A list of valid profiles OR systems. If an error occurred this is logged and an empty list is returned.
         """
         if list_type == 'profile':
             all_objs = [profile for profile in self.api.profiles()]
@@ -134,29 +133,29 @@ class BuildIso:
             all_objs = [system for system in self.api.systems()]
         else:
             utils.die("Invalid list_type argument: " + list_type)
-            return
+            return []
 
         all_objs.sort(key=lambda profile: profile.name)
 
-        # no profiles/systems selection is made, let's process everything
+        # No profiles/systems selection is made, let's return everything.
         if not selected_items:
             return all_objs
 
-        which_objs = []
+        filtered_objects = []
         selected_list = utils.input_string_or_list(selected_items)
         for obj in all_objs:
             if obj.name in selected_list:
-                which_objs.append(obj)
+                filtered_objects.append(obj)
                 selected_list.remove(obj.name)
 
         for bad_name in selected_list:
             self.logger.warning("WARNING: %s is not a valid %s" % (bad_name, list_type))
 
-        if not which_objs:
+        if not filtered_objects:
             utils.die("No valid systems or profiles were specified.")
-            return
+            return []
 
-        return which_objs
+        return filtered_objects
 
     def generate_netboot_iso(self, imagesdir, isolinuxdir, profiles=None, systems=None,
                              exclude_dns: Optional[bool] = None):
@@ -176,8 +175,7 @@ class BuildIso:
 
         # setup isolinux.cfg
         isolinuxcfg = os.path.join(isolinuxdir, "isolinux.cfg")
-        cfg = open(isolinuxcfg, "w+")
-        cfg.write(self.iso_template)
+        cfglines = [self.iso_template]
 
         # iterate through selected profiles
         for profile in which_profiles:
@@ -186,10 +184,10 @@ class BuildIso:
             distname = self.make_shorter(dist.name)
             self.copy_boot_files(dist, isolinuxdir, distname)
 
-            cfg.write("\n")
-            cfg.write("LABEL %s\n" % profile.name)
-            cfg.write("  MENU LABEL %s\n" % profile.name)
-            cfg.write("  kernel %s.krn\n" % distname)
+            cfglines.append("")
+            cfglines.append("LABEL %s" % profile.name)
+            cfglines.append("  MENU LABEL %s" % profile.name)
+            cfglines.append("  kernel %s.krn" % distname)
 
             data = utils.blender(self.api, False, profile)
 
@@ -231,9 +229,9 @@ class BuildIso:
                 if "proxy" in data and data["proxy"] != "":
                     append_line += " mirror/http/proxy=%s" % data["proxy"]
             append_line += BuildIso.add_remaining_kopts(data["kernel_options"])
-            cfg.write(append_line)
+            cfglines.append(append_line)
 
-        cfg.write("\nMENU SEPARATOR\n")
+        cfglines.append("MENU SEPARATOR")
 
         # iterate through all selected systems
         for system in which_systems:
@@ -243,10 +241,10 @@ class BuildIso:
             distname = self.make_shorter(dist.name)
             self.copy_boot_files(dist, isolinuxdir, distname)
 
-            cfg.write("\n")
-            cfg.write("LABEL %s\n" % system.name)
-            cfg.write("  MENU LABEL %s\n" % system.name)
-            cfg.write("  kernel %s.krn\n" % distname)
+            cfglines.append("")
+            cfglines.append("LABEL %s" % system.name)
+            cfglines.append("  MENU LABEL %s" % system.name)
+            cfglines.append("  kernel %s.krn" % distname)
 
             data = utils.blender(self.api, False, system)
             if not re.match(r"[a-z]+://.*", data["autoinstall"]):
@@ -340,24 +338,24 @@ class BuildIso:
                     del data["kernel_options"]["nameserver"]
 
             if dist.breed in ["ubuntu", "debian"]:
-                if "netcfg/choose_interface" in data["kernel_options"] and data["kernel_options"][
-                    "netcfg/choose_interface"] != "":
+                if "netcfg/choose_interface" in data["kernel_options"] \
+                        and data["kernel_options"]["netcfg/choose_interface"] != "":
                     my_int = data["kernel_options"]["netcfg/choose_interface"]
                     del data["kernel_options"]["netcfg/choose_interface"]
-                if "netcfg/get_ipaddress" in data["kernel_options"] and data["kernel_options"][
-                    "netcfg/get_ipaddress"] != "":
+                if "netcfg/get_ipaddress" in data["kernel_options"] \
+                        and data["kernel_options"]["netcfg/get_ipaddress"] != "":
                     my_ip = data["kernel_options"]["netcfg/get_ipaddress"]
                     del data["kernel_options"]["netcfg/get_ipaddress"]
-                if "netcfg/get_netmask" in data["kernel_options"] and data["kernel_options"][
-                    "netcfg/get_netmask"] != "":
+                if "netcfg/get_netmask" in data["kernel_options"]\
+                        and data["kernel_options"]["netcfg/get_netmask"] != "":
                     my_mask = data["kernel_options"]["netcfg/get_netmask"]
                     del data["kernel_options"]["netcfg/get_netmask"]
-                if "netcfg/get_gateway" in data["kernel_options"] and data["kernel_options"][
-                    "netcfg/get_gateway"] != "":
+                if "netcfg/get_gateway" in data["kernel_options"]\
+                        and data["kernel_options"]["netcfg/get_gateway"] != "":
                     my_gw = data["kernel_options"]["netcfg/get_gateway"]
                     del data["kernel_options"]["netcfg/get_gateway"]
-                if "netcfg/get_nameservers" in data["kernel_options"] and data["kernel_options"][
-                    "netcfg/get_nameservers"] != "":
+                if "netcfg/get_nameservers" in data["kernel_options"]\
+                        and data["kernel_options"]["netcfg/get_nameservers"] != "":
                     my_dns = data["kernel_options"]["netcfg/get_nameservers"]
                     del data["kernel_options"]["netcfg/get_nameservers"]
 
@@ -382,8 +380,8 @@ class BuildIso:
                     # Bonded/bridged management interface, find a slave interface if eth0 is a slave use that (it's what
                     # people expect)
                     for (iname, idata) in list(data["interfaces"].items()):
-                        if idata["interface_type"] in ["bond_slave", "bridge_slave", "bonded_bridge_slave"] and idata[
-                            "interface_master"] == mgmt_ints_multi[0]:
+                        if idata["interface_type"] in ["bond_slave", "bridge_slave", "bonded_bridge_slave"]\
+                                and idata["interface_master"] == mgmt_ints_multi[0]:
                             slave_ints.append(iname)
 
                     if "eth0" in slave_ints:
@@ -472,11 +470,13 @@ class BuildIso:
 
             # Add remaining kernel_options to append_line
             append_line += BuildIso.add_remaining_kopts(data["kernel_options"])
-            cfg.write(append_line)
+            cfglines.append(append_line)
 
-        cfg.write("\n")
-        cfg.write("MENU END\n")
-        cfg.close()
+        cfglines.append("")
+        cfglines.append("MENU END")
+
+        with open(isolinuxcfg, "w+") as cfg:
+            cfg.writelines(cfglines)
 
     def generate_standalone_iso(self, imagesdir, isolinuxdir, distname, filesource, airgapped: bool, profiles):
         """
@@ -521,8 +521,8 @@ class BuildIso:
 
         self.logger.info("generating an isolinux.cfg")
         isolinuxcfg = os.path.join(isolinuxdir, "isolinux.cfg")
-        cfg = open(isolinuxcfg, "w+")
-        cfg.write(self.iso_template)
+
+        cfglines = [self.iso_template]
 
         if airgapped:
             repo_names_to_copy = {}
@@ -542,12 +542,12 @@ class BuildIso:
             # SUSE is not using 'text'. Instead 'textmode' is used as kernel option.
             utils.kopts_overwrite(None, distro, data['kernel_options'], self.settings)
 
-            cfg.write("\n")
-            cfg.write("LABEL %s\n" % descendant.name)
+            cfglines.append("")
+            cfglines.append("LABEL %s" % descendant.name)
             if menu_indent:
-                cfg.write("  MENU INDENT %d\n" % menu_indent)
-            cfg.write("  MENU LABEL %s\n" % descendant.name)
-            cfg.write("  kernel %s\n" % os.path.basename(distro.kernel))
+                cfglines.append("  MENU INDENT %d" % menu_indent)
+            cfglines.append("  MENU LABEL %s" % descendant.name)
+            cfglines.append("  kernel %s" % os.path.basename(distro.kernel))
 
             append_line = "  append initrd=%s" % os.path.basename(distro.initrd)
             if distro.breed == "redhat":
@@ -561,7 +561,7 @@ class BuildIso:
 
             # add remaining kernel_options to append_line
             append_line += BuildIso.add_remaining_kopts(data["kernel_options"])
-            cfg.write(append_line)
+            cfglines.append(append_line)
 
             if descendant.COLLECTION_TYPE == 'profile':
                 autoinstall_data = self.api.autoinstallgen.generate_autoinstall_for_profile(descendant.name)
@@ -608,9 +608,10 @@ class BuildIso:
                 autoinstall_file.write(autoinstall_data)
 
         self.logger.info("done writing config")
-        cfg.write("\n")
-        cfg.write("MENU END\n")
-        cfg.close()
+        cfglines.append("")
+        cfglines.append("MENU END")
+        with open(isolinuxcfg, "w+") as cfg:
+            cfg.writelines(cfglines)
 
         if airgapped:
             # copy any repos found in profiles or systems to the iso build
