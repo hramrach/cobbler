@@ -41,13 +41,13 @@ from cobbler import autoinstallgen
 from cobbler import download_manager
 from cobbler.cexceptions import CX
 
-
 ERROR = 100
 INFO = 10
 DEBUG = 5
 
 # FIXME: add --quiet depending on if not --verbose?
 RSYNC_CMD = "rsync -a %s '%s' %s --progress"
+
 
 # notes on locking:
 # - CobblerAPI is a singleton object
@@ -434,7 +434,7 @@ class CobblerAPI:
             if isinstance(ref, str):
                 ref = self.get_item(what, ref)
                 if ref is None:
-                    return      # nothing to remove
+                    return  # nothing to remove
         self.log("remove_item(%s)" % what, [ref.name])
         self.get_items(what).remove(ref.name, recursive=recursive, with_delete=delete, with_triggers=with_triggers)
 
@@ -1410,7 +1410,6 @@ class CobblerAPI:
         )
         dhcp = dhcp_module.get_manager(self._collection_mgr)
         dhcp.sync()
-
     # ==========================================================================
 
     def get_sync(self, verbose: bool = False):
@@ -1515,7 +1514,7 @@ class CobblerAPI:
         if not mirror_url.endswith("/"):
             mirror_url = "%s/" % mirror_url
 
-        if mirror_url.startswith("http://") or mirror_url.startswith("https://") or mirror_url.startswith("ftp://")\
+        if mirror_url.startswith("http://") or mirror_url.startswith("https://") or mirror_url.startswith("ftp://") \
                 or mirror_url.startswith("nfs://"):
             # HTTP mirrors are kind of primative. rsync is better. That's why this isn't documented in the manpage and
             # we don't support them.
@@ -1566,7 +1565,7 @@ class CobblerAPI:
                     self.log("Network root given to --available-as is missing a colon, please see the manpage example.")
                     return False
 
-        import_module = self.get_module_by_name("managers.import_signatures")\
+        import_module = self.get_module_by_name("managers.import_signatures") \
             .get_import_manager(self._collection_mgr)
         import_module.run(path, mirror_name, network_root, autoinstall_file, arch, breed, os_version)
 
@@ -1686,27 +1685,26 @@ class CobblerAPI:
 
     # ==========================================================================
 
-    def build_iso(self, iso=None, profiles=None, systems=None, buildisodir=None, distro=None, standalone=None,
-                  airgapped=None, source=None, exclude_dns=None, xorrisofs_opts=None):
-        """
+    def build_iso(self, iso: Optional[str] = None, profiles=None, systems=None, buildisodir=None, distro=None,
+                  standalone: bool = False, airgapped: bool = False, source=None, exclude_dns=None, xorrisofs_opts=None):
+        r"""
         Build an iso image which may be network bootable or not.
 
-        :param iso:
+        :param iso: The name of the ISO. Defaults to ``autoinst.iso``.
         :param profiles:
         :param systems:
-        :param buildisodir:
+        :param buildisodir: This overwrites the directory from the settings in which the iso is built in.
         :param distro:
-        :param standalone:
-        :param airgapped:
-        :param source:
-        :param exclude_dns:
-        :param xorrisofs_opts:
+        :param standalone: This means that no network connection is needed to install the generated iso.
+        :param airgapped: This option implies ``standalone=True``.
+        :param source: If the iso should be offline available this is the path to the sources of the image.
+        :param exclude_dns: Whether the repositories have to be locally available or the internet is reachable.
+        :param xorrisofs_opts: ``xorrisofs`` options to include additionally.
         """
         builder = BuildIso(self._collection_mgr)
-        builder.run(
-            iso=iso, profiles=profiles, systems=systems, buildisodir=buildisodir, distro=distro, standalone=standalone,
-            airgapped=airgapped, source=source, exclude_dns=exclude_dns, xorrisofs_opts=xorrisofs_opts
-        )
+        builder.run(iso=iso, profiles=profiles, systems=systems, buildisodir=buildisodir, distro=distro,
+                    standalone=standalone, airgapped=airgapped, source=source, exclude_dns=exclude_dns,
+                    xorrisofs_opts=xorrisofs_opts)
 
     # ==========================================================================
 
