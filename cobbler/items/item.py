@@ -295,6 +295,8 @@ class Item:
         :return: The list with the children. If no childrens are present an emtpy list is returned.
         """
         keys = list(self.children.keys())
+        if len(keys) == 0:
+            return []
         if sorted:
             keys.sort()
         results = []
