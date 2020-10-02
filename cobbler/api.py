@@ -68,7 +68,7 @@ class CobblerAPI:
         """
         Constructor
 
-        :param is_cobblerd: Wether this API is run as a deamon or not.
+        :param is_cobblerd: Whether this API is run as a daemon or not.
         """
 
         # FIXME: this should be switchable through some simple system
