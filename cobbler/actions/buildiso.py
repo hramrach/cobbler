@@ -642,9 +642,9 @@ class BuildIso:
     def run(self, iso: str = "autoinst.iso", buildisodir=None, profiles=None, systems=None, distro=None,
             standalone: bool = False, airgapped: bool = False, source=None, exclude_dns: Optional[bool] = None,
             xorrisofs_opts: Optional[str] = None):
-        """
-        Run the whole iso generation from bottom to top. This is the only method which should be called from non-class
-        members.
+        r"""Run the whole iso generation from bottom to top.
+
+        This is the only method which should be called from non-class members.
 
         :param iso: The name of the iso. Defaults to "autoinst.iso".
         :param buildisodir: This overwrites the directory from the settings in which the iso is built in.
