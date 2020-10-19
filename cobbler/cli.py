@@ -28,7 +28,6 @@ import traceback
 import xmlrpc.client
 from typing import Optional
 
-from cobbler import field_info
 from cobbler.items import package, system, image, profile, repo, mgmtclass, distro, file, menu
 from cobbler import settings
 from cobbler import utils

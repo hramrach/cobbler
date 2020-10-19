@@ -20,12 +20,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301  USA
 """
 
-import time
 import weakref
 from typing import Union, Dict, Any
 
 from cobbler.cexceptions import CX
-from cobbler import settings
 from cobbler import serializer
 from cobbler.cobbler_collections.distros import Distros
 from cobbler.cobbler_collections.files import Files
@@ -36,7 +34,6 @@ from cobbler.cobbler_collections.profiles import Profiles
 from cobbler.cobbler_collections.repos import Repos
 from cobbler.cobbler_collections.systems import Systems
 from cobbler.cobbler_collections.menus import Menus
-from cobbler.settings import Settings
 
 
 class CollectionManager:
@@ -64,8 +61,6 @@ class CollectionManager:
         """
         CollectionManager.has_loaded = True
 
-        self.init_time = time.time()
-        self.current_id = 0
         self.api = api
         self._distros = Distros(weakref.proxy(self))
         self._repos = Repos(weakref.proxy(self))
@@ -77,7 +72,6 @@ class CollectionManager:
         self._files = Files(weakref.proxy(self))
         self._menus = Menus(weakref.proxy(self))
         # Not a true collection
-        self._settings = settings.Settings()
 
     def distros(self):
         """
@@ -97,11 +91,11 @@ class CollectionManager:
         """
         return self._systems
 
-    def settings(self) -> Settings:
+    def settings(self):
         """
         Return the definitive copy of the application settings
         """
-        return self._settings
+        return self.api.settings()
 
     def repos(self) -> Repos:
         """
@@ -162,8 +156,7 @@ class CollectionManager:
         :param collection: Collection
         :param item: collection item
         """
-
-        return serializer.serialize_item(collection, item)
+        serializer.serialize_item(collection, item)
 
     # pylint: disable=R0201
     def serialize_delete(self, collection, item):
@@ -173,8 +166,7 @@ class CollectionManager:
         :param collection: collection
         :param item: collection item
         """
-
-        return serializer.serialize_delete(collection, item)
+        serializer.serialize_delete(collection, item)
 
     def deserialize(self):
         """
@@ -182,9 +174,7 @@ class CollectionManager:
 
         :raises CX: if there is an error in deserialization
         """
-
         for collection in (
-            self._settings,
             self._distros,
             self._repos,
             self._profiles,
@@ -202,7 +192,7 @@ class CollectionManager:
                          % (collection.collection_type(), e)) from e
 
     def get_items(self, collection_type: str) -> Union[Distros, Profiles, Systems, Repos, Images, Mgmtclasses, Packages,
-                                                       Files, Settings]:
+                                                       Files, Settings, Menus]:
         """
         Get a full collection of a single type.
 
@@ -213,7 +203,7 @@ class CollectionManager:
         :return: The collection if ``collection_type`` is valid.
         :raises CX: If the ``collection_type`` is invalid.
         """
-        result: Union[Distros, Profiles, Systems, Repos, Images, Mgmtclasses, Packages, Files, Settings]
+        result: Union[Distros, Profiles, Systems, Repos, Images, Mgmtclasses, Packages, Files, Settings, Menus]
         if collection_type == "distro":
             result = self._distros
         elif collection_type == "profile":
@@ -233,7 +223,7 @@ class CollectionManager:
         elif collection_type == "menu":
             result = self._menus
         elif collection_type == "settings":
-            result = self._settings
+            result = self.api.settings()
         else:
             raise CX("internal error, collection name %s not supported" % collection_type)
         return result
