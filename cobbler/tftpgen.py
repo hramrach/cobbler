@@ -356,7 +356,12 @@ class TFTPGen:
         :returns: A dictionary with the pxe, ipxe and grub menu items. It has the keys from
                   utils.get_supported_system_boot_loaders().
         """
-        return self.get_menu_level(None, arch)
+        menu_items = self.get_menu_level(None, arch)
+        ## Uncomment this for menu debugging
+        #from pprint import pformat
+        #self.logger.debug("All menus:\n%s", pformat(menu_items))
+        # write the PXE files for the system
+        return menu_items
 
     def get_submenus(self, menu, metadata, arch: str):
         """
